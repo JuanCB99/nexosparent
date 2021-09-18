@@ -1,5 +1,6 @@
 package com.nexos.businessdomain.mercancias.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.util.List;
 import javax.persistence.Basic;
@@ -36,6 +37,7 @@ public class Cargos implements Serializable {
     @Size(max = 60)
     @Column(name = "nombre_cargo")
     private String nombreCargo;
+    @JsonIgnore
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "cargoId")
     private List<Usuarios> usuariosList;
 

@@ -27,35 +27,37 @@ import org.springframework.web.bind.annotation.PutMapping;
 @RestController
 @RequestMapping("/usuarios")
 public class UsuarioRestController {
-    
+
     @Autowired
     IUsuarioRepository usuariosRepository;
-    
+
     @GetMapping()
     public List<Usuarios> list() {
         return usuariosRepository.findAll();
     }
-    
+
     @GetMapping("/{id}")
-    public Usuarios get(@PathVariable Integer id) {
-        Usuarios usuarioRecuperado = usuariosRepository.findById(id).get();
-        return usuarioRecuperado;
+    public ResponseEntity<Usuarios> get(@PathVariable Integer id) {
+        return usuariosRepository.findById(id).
+                map(ResponseEntity::ok).
+                orElse(ResponseEntity.notFound().build());
+
     }
-    
+
     @PutMapping("/{id}")
     public ResponseEntity<?> put(@PathVariable String id, @RequestBody Object input) {
         return null;
     }
-    
+
     @PostMapping
     public ResponseEntity<?> post(@RequestBody Usuarios input) {
         Usuarios usuarioSave = usuariosRepository.save(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioSave);
     }
-    
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable String id) {
         return null;
     }
-    
+
 }

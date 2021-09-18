@@ -56,4 +56,6 @@ public class Mercancia implements Serializable {
     @ManyToOne(optional = false)
     private Usuarios usuarioId;
     
+    
+    
 }
