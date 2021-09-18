@@ -1,9 +1,10 @@
-package com.nexos.businessdomain.cargo;
+package com.nexos.infraestructuredomain.adminserver;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-class CargoApplicationTests {
+@SpringBootTest
+class AdminserverApplicationTests {
 
 	@Test
 	void contextLoads() {

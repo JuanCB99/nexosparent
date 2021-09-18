@@ -8,22 +8,15 @@ package com.nexos.businessdomain.mercancias.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.nexos.businessdomain.mercancias.entities.Mercancia;
 import com.nexos.businessdomain.mercancias.entities.Usuarios;
-import com.nexos.businessdomain.mercancias.entities.Cargos;
 import com.nexos.businessdomain.mercancias.repository.IMercanciaRepository;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Date;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -68,14 +61,23 @@ public class MercanciaRestController {
             });
 
     @GetMapping()
-    public List<Mercancia> list() {
-        return mercanciaRepository.findAll();
+    public ResponseEntity<List<Mercancia>> list() {
+        List<Mercancia> mercancias = mercanciaRepository.findAll();
+
+        if (mercancias == null || mercancias.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(mercancias);
+        }
     }
 
     @GetMapping("/{id}")
-    public Mercancia get(@PathVariable Integer id) {
+    public ResponseEntity<Mercancia> get(@PathVariable Integer id) {
 
-        return mercanciaRepository.findById(id).get();
+        return mercanciaRepository.findById(id).
+                map(ResponseEntity::ok).
+                orElse(ResponseEntity.notFound().build());
+
     }
 
     @PostMapping("/byUsuario")
@@ -86,13 +88,19 @@ public class MercanciaRestController {
         return ResponseEntity.status(HttpStatus.FOUND).body(mercancias);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> put(@PathVariable String id, @RequestBody Object input) {
-        return null;
+    @PutMapping("/{idUsuario}")
+    public ResponseEntity<?> put(@PathVariable Integer idUsuario, @RequestBody Mercancia input) {
+
+        mercanciaRepository.save(input);
+        
+        System.out.println("USUARIO QUE MODIFICO LA TABLA = " + idUsuario);
+
+        return ResponseEntity.ok(input);
+        
     }
 
     @PostMapping
-    public ResponseEntity<?> post(@RequestBody Mercancia input) {
+    public ResponseEntity<Mercancia> post(@RequestBody Mercancia input) {
         Mercancia mercanciaSave = mercanciaRepository.save(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(mercanciaSave);
     }
@@ -101,9 +109,9 @@ public class MercanciaRestController {
     private Integer getUserById(Integer idUsuario) {
 
         WebClient client = webClientBuilder.clientConnector(new ReactorClientHttpConnector(HttpClient.from(tcpClient)))
-                .baseUrl("http://localhost:8080/usuarios")
+                .baseUrl("http://businessdomain-usuario/usuarios")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8080/usuarios"))
+                .defaultUriVariables(Collections.singletonMap("url", "http://businessdomain-usuario/usuarios"))
                 .build();
 
         JsonNode block = client.method(HttpMethod.GET).uri("/" + idUsuario)
@@ -111,9 +119,9 @@ public class MercanciaRestController {
 
         //Usuarios usuarioRecuperado = new Usuarios();
         //usuarioRecuperado.setNombreUsuario(block.get("nombreUsuario").asText()); 
-        System.out.println("DATOS DE USUARIO REMOTO = " + 
-                block.get("idUsuario").asInt() + "Nombre: "
-                        + block.get("nombreUsuario").asText());
+        System.out.println("DATOS DE USUARIO REMOTO = "
+                + block.get("idUsuario").asInt() + "Nombre: "
+                + block.get("nombreUsuario").asText());
         return block.get("idUsuario").asInt();
 
     }
@@ -121,7 +129,11 @@ public class MercanciaRestController {
     @DeleteMapping("/{idMercancia}/{idUsuario}")
     public ResponseEntity<?> delete(@PathVariable Integer idMercancia, @PathVariable Integer idUsuario) {
 
-        Mercancia mercanciaRecuperada = get(idMercancia);
+        if (get(idMercancia).getBody() == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Mercancia mercanciaRecuperada = get(idMercancia).getBody();
 
         if (mercanciaRecuperada.getUsuarioId().getIdUsuario() == idUsuario) {
 
